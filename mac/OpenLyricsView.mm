@@ -839,8 +839,13 @@ static NSString *plain_text_from_lyrics(const LyricData& lyrics) {
             if (_firstRowForLyricLine && newLine < (NSInteger)[_firstRowForLyricLine count]) {
                 visualRow = [[_firstRowForLyricLine objectAtIndex:(NSUInteger)newLine] integerValue];
             }
-            CGFloat lineCenter = visualRow * _lineHeight + _lineHeight / 2.0;
-            _targetScrollOffset = kTopPadding + lineCenter - self.bounds.size.height / 2.0;
+            // CGFloat lineCenter = visualRow * _lineHeight + _lineHeight / 2.0;
+            // _targetScrollOffset = kTopPadding + lineCenter - self.bounds.size.height / 2.0;
+            CGFloat viewHeight = self.bounds.size.height;  
+            CGFloat lineTop = visualRow * _lineHeight;  
+            // 当前行属于哪一页（每页高度 = 视图高度）  
+            NSInteger page = (NSInteger)floor(lineTop / viewHeight);  
+            _targetScrollOffset = kTopPadding + page * viewHeight;
         } else {
             _targetScrollOffset = 0.0;
         }

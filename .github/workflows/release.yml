@@ -1,0 +1,88 @@
+name: Release macOS Component
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and publish (e.g. v1.2.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps/curl
+            3rdparty/foo_SDK/**/build/Release/*.a
+          key: macos-deps-${{ runner.os }}-${{ hashFiles('scripts/build-deps.sh', '3rdparty/foo_SDK/**/*.xcodeproj/**') }}
+
+      - name: Build dependencies (SDK & libcurl)
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "13.0"
+        run: bash scripts/build-deps.sh
+
+      - name: Build foo_openlyrics_MacOS component
+        run: |
+          xcodebuild \
+            -project mac/openlyrics.xcodeproj \
+            -configuration Release \
+            -arch x86_64 \
+            -arch arm64 \
+            clean build
+
+      - name: Run tests
+        run: bash scripts/run-tests.sh
+
+      - name: Package .fb2k-component
+        id: package
+        run: |
+          BUILD_DIR="mac/build/Release"
+          COMPONENT="$BUILD_DIR/foo_openlyrics_MacOS.component"
+          ARTIFACT="$BUILD_DIR/foo_openlyrics_MacOS.fb2k-component"
+
+          test -d "$COMPONENT"
+
+          STAGE_DIR="$(mktemp -d)"
+          mkdir -p "$STAGE_DIR/mac"
+          cp -R "$COMPONENT" "$STAGE_DIR/mac/"
+          (
+            cd "$STAGE_DIR"
+            zip -r "$OLDPWD/$ARTIFACT" "mac/foo_openlyrics_MacOS.component"
+          )
+          rm -rf "$STAGE_DIR"
+
+          echo "artifact_path=$ARTIFACT" >> "$GITHUB_OUTPUT"
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          files: ${{ steps.package.outputs.artifact_path }}
+          generate_release_notes: true
