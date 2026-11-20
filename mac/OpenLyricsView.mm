@@ -844,6 +844,10 @@ static NSString *plain_text_from_lyrics(const LyricData& lyrics) {
             CGFloat viewHeight = self.bounds.size.height;  
             CGFloat nextLineTop = (visualRow + 1) * _lineHeight;  
             NSInteger page = (NSInteger)floor(nextLineTop / viewHeight);  
+            if (page != _lastAutoPage) {  
+                _lastAutoPage = page;  
+                _manualScrollDelta = 0.0;  
+            }  
             _targetScrollOffset = kTopPadding + page * viewHeight;
         } else {
             _targetScrollOffset = 0.0;
