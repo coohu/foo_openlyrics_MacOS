@@ -116,6 +116,7 @@ static NSString *plain_text_from_lyrics(const LyricData& lyrics) {
     CGFloat   _dragStartY;
     CGFloat   _dragStartOffset;       // _scrollOffset at drag start (for immediate feedback)
     CGFloat   _dragStartManualDelta;  // _manualScrollDelta at drag start
+    NSInteger _lastAutoPage;          // page index of the last auto-scroll target; a page change clears the manual offset
 
     // CTLine cache — rebuilt when lyrics or usable width changes
     NSArray      *_cachedLines;           // flat array of visual rows (CTLineRef via NSValue)
@@ -167,6 +168,7 @@ static NSString *plain_text_from_lyrics(const LyricData& lyrics) {
         _scrollOffset = 0.0;
         _targetScrollOffset = 0.0;
         _manualScrollDelta = 0.0;
+        _lastAutoPage = -1;
         _currentLineIndex = -1;
 
         _font = [[NSFont systemFontOfSize:kFontSize] retain];
