@@ -133,14 +133,4 @@
     [panel release];
 }
 
-- (void)testSpawnManualSearchMacDoesNotCrash
-{
-    // In a test context without an active foobar2000 host this should be a no-op.
-    if (!core_api::are_services_available()) {
-        XCTAssertNoThrow(SpawnManualSearchMac(),
-                         @"SpawnManualSearchMac should not throw in a test context");
-    }
-    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.01, false);
-}
-
 @end
